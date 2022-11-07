@@ -181,7 +181,7 @@ mod tests {
                     toolkit_experimental.parallel_anything_deserialize_fn_outer,\
                     toolkit_experimental.parallel_anything_combine_fn_outer\
                 )"
-            );
+           );
         });
     }
 
