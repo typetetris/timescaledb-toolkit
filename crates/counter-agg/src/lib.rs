@@ -10,7 +10,7 @@ pub mod range;
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum CounterError{
     OrderError(TSPoint,TSPoint),
     BoundsInvalid,
@@ -293,6 +293,21 @@ impl MetricSummary {
 }
 
 impl fmt::Display for CounterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)
+    -> Result<(), fmt::Error> {
+        match self {
+            CounterError::OrderError(last,incoming) => {
+                let last_json = serde_json::to_string(&last).unwrap();
+                let incoming_json = serde_json::to_string(&incoming).unwrap();
+                write!(f, "out of order points: points must be submitted in time-order {} {}", last_json, incoming_json)
+            },
+            CounterError::BoundsInvalid =>
+                write!(f, "cannot calculate delta without valid bounds"),
+        }
+    }
+}
+
+impl fmt::Debug for CounterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>)
     -> Result<(), fmt::Error> {
         match self {
