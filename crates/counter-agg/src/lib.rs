@@ -12,7 +12,7 @@ mod tests;
 
 #[derive(Debug, PartialEq)]
 pub enum CounterError{
-    OrderError(i64,i64),
+    OrderError(TSPoint,TSPoint),
     BoundsInvalid,
 }
 
@@ -93,7 +93,7 @@ impl MetricSummary {
     fn add_point(&mut self, incoming: &TSPoint) -> Result<(), CounterError>{
 
         if incoming.ts < self.last.ts {
-            return Err(CounterError::OrderError(self.last.ts, incoming.ts));
+            return Err(CounterError::OrderError(self.last, incoming.clone()));
         }
         //TODO: test this
         if incoming.ts == self.last.ts {
@@ -125,7 +125,7 @@ impl MetricSummary {
     fn combine(&mut self, incoming: &MetricSummary) -> Result<(), CounterError> {
         // this requires that self comes before incoming in time order
         if self.last.ts >= incoming.first.ts {
-            return Err(CounterError::OrderError(self.last.ts, incoming.first.ts));
+            return Err(CounterError::OrderError(self.last, incoming.first));
         }
 
         // These values are not rounded, so direct comparison is valid.
@@ -296,8 +296,11 @@ impl fmt::Display for CounterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>)
     -> Result<(), fmt::Error> {
         match self {
-            CounterError::OrderError(last,incoming) =>
-                write!(f, "out of order points: points must be submitted in time-order {} {}", last, incoming),
+            CounterError::OrderError(last,incoming) => {
+                let last_json = serde_json::to_string(&last).unwrap();
+                let incoming_json = serde_json::to_string(&incoming).unwrap();
+                write!(f, "out of order points: points must be submitted in time-order {} {}", last_json, incoming_json)
+            },
             CounterError::BoundsInvalid =>
                 write!(f, "cannot calculate delta without valid bounds"),
         }
