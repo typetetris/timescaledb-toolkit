@@ -12,7 +12,7 @@ mod tests;
 
 #[derive(Debug, PartialEq)]
 pub enum CounterError{
-    OrderError,
+    OrderError(i64,i64),
     BoundsInvalid,
 }
 
@@ -93,7 +93,7 @@ impl MetricSummary {
     fn add_point(&mut self, incoming: &TSPoint) -> Result<(), CounterError>{
 
         if incoming.ts < self.last.ts {
-            return Err(CounterError::OrderError);
+            return Err(CounterError::OrderError(self.last.ts, incoming.ts));
         }
         //TODO: test this
         if incoming.ts == self.last.ts {
@@ -125,7 +125,7 @@ impl MetricSummary {
     fn combine(&mut self, incoming: &MetricSummary) -> Result<(), CounterError> {
         // this requires that self comes before incoming in time order
         if self.last.ts >= incoming.first.ts {
-            return Err(CounterError::OrderError);
+            return Err(CounterError::OrderError(self.last.ts, incoming.first.ts));
         }
 
         // These values are not rounded, so direct comparison is valid.
@@ -296,8 +296,8 @@ impl fmt::Display for CounterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>)
     -> Result<(), fmt::Error> {
         match self {
-            CounterError::OrderError =>
-                write!(f, "out of order points: points must be submitted in time-order"),
+            CounterError::OrderError(last,incoming) =>
+                write!(f, "out of order points: points must be submitted in time-order {} {}", last, incoming),
             CounterError::BoundsInvalid =>
                 write!(f, "cannot calculate delta without valid bounds"),
         }
